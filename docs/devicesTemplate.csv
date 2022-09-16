@@ -1,0 +1,2 @@
+deviceSerial,deviceName,deviceTags,deviceNotes,deviceAddress,deviceLatitude,deviceLongitude,w1Enabled,w1Static,w1StaticIp,w1Subnet,w1Gateway,w1Dns,w1Vlan,w2Enabled,w2Static,w2StaticIp,w2Subnet,w2Gateway,w2Dns,w2Vlan
+ABCD-1234-ABCD,AP_Switch Name,"indoorSSID,OutdoorSSID",IDFA-B21,31024,37.4180951010362,-122.098531723022,,TRUE,10.1.1.2,255.255.255.0,10.1.1.1,"1.1.1.1,1.0.0.1",55,,,,,,,
