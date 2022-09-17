@@ -1,14 +1,16 @@
 # Meraki AWS Lambda functions
 
-This repo has two lambda functions. One triggers off an S3 bucket
+This repo has two lambda functions. One triggers off a S3 bucket
 file creation. Which processes the file and drops the parsed
 data into a Simple Queue Service. The SQS triggers the second lambda
-function to process the queue.
+function to process the queue and compare the new values to the current
+Meraki device values. The script will then update only the values that are
+different.
 
 ## KMS Setup
 A new KMS key will need to be created in order to encrypt your Meraki
-API key. This key will need to be a symetric key used for encryption and
-decryption
+API key (Strongly Recommended). This key will need to be a symetric key used
+for encryption and decryption.
 
 ## S3 Setup
 Create a folder named merakiConfigCsv in a S3 bucket that will be used for file uploads.
@@ -107,5 +109,5 @@ There is a sample CSV file located in the [docs/](docs/) directory.
 This tool only requires that the deviceSerial field be present.
 All other fields are optional and field order is not specific.
 
-The deviceTags field can be a comma seprated list of tags and the function will
+The deviceTags field can be a comma separated list of tags and the function will
 break them into individual tags.
