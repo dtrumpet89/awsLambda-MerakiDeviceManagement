@@ -4,16 +4,6 @@ import mLogger as mLog
 from datetime import datetime
 from base64 import b64decode
 
-
-''' Enviroment Variables '''
-REGION = os.environ.get('AWS_REGION') or 'us-east-1'
-CNF_QUEUE = os.environ.get('CNF_QUEUE')
-CNF_TOPIC = os.environ.get('CNF_TOPIC')
-
-import boto3
-s3 = boto3.client('s3')
-sqs = boto3.client('sqs', region_name=REGION)
-
 deviceInfo: dict = {}
 deviceWan: dict = {}
 
@@ -214,8 +204,23 @@ def parseCsvData(csvDict) -> None:
                     sqs.send_message(QueueUrl=CNF_QUEUE, MessageBody=json.dumps(tmpWanDevice), MessageGroupId='DeviceWan')
 
 
+def processCsvData():
+    pass
+
+
 ''' Main Lambda Handler Function '''
 def lambda_handler(event, context):
+
+
+    ''' Enviroment Variables '''
+    REGION = os.environ.get('AWS_REGION') or 'us-east-1'
+    CNF_QUEUE = os.environ.get('CNF_QUEUE')
+    CNF_TOPIC = os.environ.get('CNF_TOPIC')
+
+    import boto3
+    s3 = boto3.client('s3')
+    sqs = boto3.client('sqs', region_name=REGION)
+
 
     bucket = event['Records'][0]['s3']['bucket']['name']
     key = urllib.parse.unquote_plus(event['Records'][0]['s3']['object']['key'], encoding='utf-8')
