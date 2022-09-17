@@ -4,11 +4,10 @@ import mLogger as mLog
 from base64 import b64decode
 from datetime import datetime
 
-import boto3
-
 
 REGION = os.environ.get('AWS_REGION') or 'us-east-1'
 
+import boto3
 sqs = boto3.client("sqs", region_name=REGION)
 
 merakiUrl = "https://api.meraki.com/api/v1/devices/"
