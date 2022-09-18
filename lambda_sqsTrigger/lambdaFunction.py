@@ -4,12 +4,6 @@ import mLogger as mLog
 from base64 import b64decode
 from datetime import datetime
 
-
-REGION = os.environ.get('AWS_REGION') or 'us-east-1'
-
-import boto3
-sqs = boto3.client("sqs", region_name=REGION)
-
 merakiUrl = "https://api.meraki.com/api/v1/devices/"
 
 headers = {
@@ -156,6 +150,11 @@ def processDevices() -> None:
 
 ''' Main Lambda Handler Function '''
 def lambda_handler(event, context):
+
+    REGION = os.environ.get('AWS_REGION') or 'us-east-1'
+
+    import boto3
+    sqs = boto3.client("sqs", region_name=REGION)
 
     for message in event['Records']:
 

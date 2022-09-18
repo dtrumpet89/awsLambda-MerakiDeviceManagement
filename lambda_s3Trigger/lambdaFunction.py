@@ -130,87 +130,103 @@ def parseWanAttributes(dSerial, r):
             dfCount += 1
     mLog.mLog.debug(deviceWan[dSerial])
 
+def parseDeviceInfo(row, devSerial) -> Dict:
+
+    deviceInfo: dict = {}
+
+
+    ''' Device Info Fields '''
+    deviceInfo[devSerial] = deviceInfoRestFields.copy()
+    deviceInfo[devSerial]['serial'] = devSerial
+
+    dfCount: int = 0
+    for i in deviceInfo[devSerial]:
+        if i == 'serial':
+            dfCount += 1
+        else:
+            deviceInfo[devSerial][i] = validateField(deviceInfoCsvFields[dfCount], row)
+            dfCount += 1
+
+    deviceInfo[devSerial] = cleanDict(deviceInfo[devSerial])
+
+    if "tags" in deviceInfo[devSerial].keys():
+        deviceInfo[devSerial]['tags'] = deviceInfo[devSerial]['tags'].split(',')
+
+    # Delete if only one field (serial) or no fields exist
+    if len(deviceInfo[devSerial]) <= 1:
+        del deviceInfo[devSerial]
+        mLog.mLog.debug("No Device Info fields to update for serial: {}".format(devSerial))
+        return
+    else:
+        tmpDevice = None
+        tmpDevice = {}
+        tmpDevice[devSerial] = deviceInfo[devSerial]
+        mLog.mLog.debug(tmpDevice[devSerial])
+        return tmpDevice
+
+def parseDeviceWan(row, devSerial) -> Dict:
+
+    deviceWan: dict = {}
+
+    ''' Device Wan Fields '''
+    deviceWan[devSerial] = deviceWanRestFields.copy()
+    deviceWan[devSerial]['wan1'] = deviceWanRestFields['wan1'].copy()
+    deviceWan[devSerial]['wan2'] = deviceWanRestFields['wan2'].copy()
+
+    mLog.mLog.debug("Set default WAN Fields")
+    parseWanAttributes(devSerial, row)
+
+    deviceWan[devSerial]['wan1'] = cleanDict(deviceWan[devSerial]['wan1'])
+    deviceWan[devSerial]['wan2'] = cleanDict(deviceWan[devSerial]['wan2'])
+
+    deviceWan[devSerial] = cleanDict(deviceWan[devSerial])
+
+    if not bool(deviceWan[devSerial]['wan1']):
+        del deviceWan[devSerial]['wan1']
+    else:
+        deviceWan[devSerial]['wan1'] = validateWanInfo(deviceWan[devSerial]['wan1'])
+
+    if not bool(deviceWan[devSerial]['wan2']):
+        del deviceWan[devSerial]['wan2']
+    else:
+        deviceWan[devSerial]['wan2'] = validateWanInfo(deviceWan[devSerial]['wan2'])
+
+    if len(deviceWan[devSerial]) == 0:
+        del deviceWan[devSerial]
+        mLog.mLog.debug("No Device Wan fields to update for serial: {}".format(devSerial))
+        return None
+    else:
+        tmpWanDevice = None
+        tmpWanDevice = {}
+        tmpWanDevice[devSerial] = deviceWan[devSerial]
+
+        mLog.mLog.debug(json.dumps(tmpWanDevice))
+        return tmpWanDevice
+
+
 def parseCsvData(csvDict) -> None:
 
     for r in csvDict:
         mLog.mLog.debug(r)
         if 'deviceSerial' in r.keys():
             mLog.mLog.debug("Found Serial Number: {}".format(r['deviceSerial']))
+
             devSerial = None
             devSerial = validateMerakiSerial(r['deviceSerial'])
             if devSerial:
 
-                ''' Device Info Fields '''
-                deviceInfo[devSerial] = deviceInfoRestFields.copy()
-                deviceInfo[devSerial]['serial'] = devSerial
-
-                dfCount: int = 0
-                for i in deviceInfo[devSerial]:
-                    if i == 'serial':
-                        dfCount += 1
-                    else:
-                        deviceInfo[devSerial][i] = validateField(deviceInfoCsvFields[dfCount], r)
-                        dfCount += 1
-
-                deviceInfo[devSerial] = cleanDict(deviceInfo[devSerial])
-
-                if "tags" in deviceInfo[devSerial].keys():
-                    deviceInfo[devSerial]['tags'] = deviceInfo[devSerial]['tags'].split(',')
-
-                # Delete if only one field (serial) or no fields exist
-                if len(deviceInfo[devSerial]) <= 1:
-                    del deviceInfo[devSerial]
-                    mLog.mLog.debug("No Device Info fields to update for serial: {}".format(devSerial))
-                else:
-                    tmpDevice = None
-                    tmpDevice = {}
-                    tmpDevice[devSerial] = deviceInfo[devSerial]
+                tmpDevice = parseDeviceInfo(r, devSerial)
+                if tmpDevice:
                     mLog.mLog.debug("Sending message to SQS")
-                    mLog.mLog.debug(tmpDevice[devSerial])
-                    sqs.send_message(QueueUrl=CNF_QUEUE, MessageBody=json.dumps(tmpDevice), MessageGroupId='DeviceInfo')
+                    sqs.send_message(QueueUrl=CNF_QUEUE, MessageBody=json.dumps(tmpDevice), MessageGroupId='DeviceWan')
 
-                ''' Device Wan Fields '''
-                deviceWan[devSerial] = deviceWanRestFields.copy()
-                deviceWan[devSerial]['wan1'] = deviceWanRestFields['wan1'].copy()
-                deviceWan[devSerial]['wan2'] = deviceWanRestFields['wan2'].copy()
-
-                mLog.mLog.debug("Set default WAN Fields")
-                parseWanAttributes(devSerial, r)
-
-                deviceWan[devSerial]['wan1'] = cleanDict(deviceWan[devSerial]['wan1'])
-                deviceWan[devSerial]['wan2'] = cleanDict(deviceWan[devSerial]['wan2'])
-
-                deviceWan[devSerial] = cleanDict(deviceWan[devSerial])
-
-                if not bool(deviceWan[devSerial]['wan1']):
-                    del deviceWan[devSerial]['wan1']
-                else:
-                    deviceWan[devSerial]['wan1'] = validateWanInfo(deviceWan[devSerial]['wan1'])
-
-                if not bool(deviceWan[devSerial]['wan2']):
-                    del deviceWan[devSerial]['wan2']
-                else:
-                    deviceWan[devSerial]['wan2'] = validateWanInfo(deviceWan[devSerial]['wan2'])
-
-                if len(deviceWan[devSerial]) == 0:
-                    del deviceWan[devSerial]
-                    mLog.mLog.debug("No Device Wan fields to update for serial: {}".format(devSerial))
-                else:
-                    tmpWanDevice = None
-                    tmpWanDevice = {}
-                    tmpWanDevice[devSerial] = deviceWan[devSerial]
+                tmpWanDevice = parseDeviceWan(r, devSerial)
+                if tmpWanDevice:
                     mLog.mLog.debug("Sending message to SQS")
-                    mLog.mLog.debug(json.dumps(tmpWanDevice))
                     sqs.send_message(QueueUrl=CNF_QUEUE, MessageBody=json.dumps(tmpWanDevice), MessageGroupId='DeviceWan')
-
-
-def processCsvData():
-    pass
-
 
 ''' Main Lambda Handler Function '''
 def lambda_handler(event, context):
-
 
     ''' Enviroment Variables '''
     REGION = os.environ.get('AWS_REGION') or 'us-east-1'
@@ -220,7 +236,6 @@ def lambda_handler(event, context):
     import boto3
     s3 = boto3.client('s3')
     sqs = boto3.client('sqs', region_name=REGION)
-
 
     bucket = event['Records'][0]['s3']['bucket']['name']
     key = urllib.parse.unquote_plus(event['Records'][0]['s3']['object']['key'], encoding='utf-8')
