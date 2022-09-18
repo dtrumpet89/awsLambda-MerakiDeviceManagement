@@ -30,6 +30,7 @@ def parseCsvData(csvDict) -> None:
     lfSqs.deviceWan = deviceWan
 
     if deviceInfo or deviceWan:
+        lfSqs.headers['X-Cisco-Meraki-API-Key'] = apiKey
         lfSqs.processDevices()
 
 
